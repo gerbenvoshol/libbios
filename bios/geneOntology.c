@@ -338,6 +338,15 @@ static void readGoOntology (char* oboFileName)
       }
       else if (strStartsWithC (line,"disjoint_from:")) {
 	;
+    }
+        else if (strStartsWithC (line,"created_by:")) {
+  ;
+    }
+        else if (strStartsWithC (line,"creation_date:")) {
+  ;
+      }
+       else if (strStartsWithC (line,"property_value:")) {
+  ;
       }
       else {
 	warn ("Unexpected line: %s",line);
@@ -373,6 +382,22 @@ GoNode* geneOntology_findGoNode (char* id)
   if (foundGoNode == 1) {
     return arrp (goNodes,index,GoNode);
   }
+
+  /* slow lookup through alt_id tags */
+  GoNode *currGoNode = NULL;
+  int size = arrayMax(goNodes);
+  for (int i = 0; i < size; i++) {
+    currGoNode = arrp (goNodes,i,GoNode);
+    if (currGoNode->goTerm->altIds) {
+      int alt_size = arrayMax(currGoNode->goTerm->altIds);
+      for (int n = 0; n < alt_size; n++) {
+        if (strcmp(textItem(currGoNode->goTerm->altIds, n), id) == 0) {
+          return arrp (goNodes,i,GoNode);
+        }
+      }
+    }
+  }
+
   return NULL;
 }
 
@@ -404,9 +429,10 @@ static void goTerms2goNodes (void)
   genericGoSlimNodes = arrayCreate (500,GoNode*);
   for (i = 0; i < arrayMax (goTerms); i++) {
     currGoTerm = arrp (goTerms,i,GoTerm);
-    if (currGoTerm->isObsolete == 1) {
-      continue;
-    }
+    //* Ignore obsolete flag?! Can cause problems with older GO annotations, but should normally be disregarded
+    // if (currGoTerm->isObsolete == 1) {
+    //   continue;
+    // }
     currGoNode = arrayp (goNodes,arrayMax (goNodes),GoNode);
     currGoNode->goTerm = currGoTerm;
     currGoNode->id = hlr_strdup (currGoTerm->id);
